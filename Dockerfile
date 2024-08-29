@@ -2,6 +2,9 @@ FROM gradle:8.8.0-jdk17 AS build
 MAINTAINER kousik
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
+# Run tests separately to catch issues earlier
+RUN gradle test --no-daemon
+
 RUN gradle build --no-daemon
 
 FROM openjdk:17-jdk-slim-buster
