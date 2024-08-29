@@ -9,11 +9,11 @@ RUN apt-get update && apt-get install -y netcat
 RUN mkdir /app
 RUN mkdir /app/logs
 
-#RUN addgroup -g 1001 -S ambula
-#RUN useradd -ms /bin/bash khaofit
-#RUN useradd -u 10001 -ms /bin/bash khaofit
 # Add user with a specific UID between 10000 and 20000
-RUN useradd -u 10001 -ms /bin/bash khaofit
+RUN useradd -u 10001 -d /home/khaofit -m -s /bin/bash khaofit
+
+# Set ownership of the home directory
+RUN chown -R 10001:10001 /home/khaofit /app /app/logs
 
 # Copy jar file to the user's home directory
 COPY --from=build /home/gradle/src/build/libs/khaofitservice-0.0.1-SNAPSHOT.jar /home/khaofit/khaofitservice-0.0.1-SNAPSHOT.jar
