@@ -20,4 +20,6 @@ public class VerifyOtpResponseDto {
   @JsonProperty("new")
   private boolean isNew;
 
+  private String txnId;
+
 }

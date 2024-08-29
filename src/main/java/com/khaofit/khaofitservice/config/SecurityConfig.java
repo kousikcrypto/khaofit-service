@@ -31,9 +31,8 @@ public class SecurityConfig {
   @Autowired
   private JwtTokenFilter jwtTokenFilter;
 
-
   @Autowired
-  Http401UnauthorizedEntryPoint http401UnauthorizedEntryPoint;
+  private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
   @Bean
   protected SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -43,7 +42,7 @@ public class SecurityConfig {
         UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
         .exceptionHandling(httpSecurityExceptionHandlingConfigurer -> httpSecurityExceptionHandlingConfigurer
-            .authenticationEntryPoint(http401UnauthorizedEntryPoint))
+            .authenticationEntryPoint(customAuthenticationEntryPoint))
         .sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -56,7 +55,10 @@ public class SecurityConfig {
     return http
         .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry ->
             authorizationManagerRequestMatcherRegistry
-                .requestMatchers(new ApprovedHostsRequestMatcher()).permitAll()
+                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/health-check/**").permitAll()
+                .requestMatchers("/bmi/**").fullyAuthenticated()
+                .requestMatchers("/user/**").fullyAuthenticated()
                 .anyRequest().permitAll());
   }
 

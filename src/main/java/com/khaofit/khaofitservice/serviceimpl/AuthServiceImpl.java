@@ -157,12 +157,14 @@ public class AuthServiceImpl implements AuthService {
         verifyOtpResponseDto.setToken(generateJwtToken(makeJwtPayLoadDto(user)));
         verifyOtpResponseDto.setRefreshToken(null);
         verifyOtpResponseDto.setUser(user);
+        verifyOtpResponseDto.setTxnId(verifyOtpRequestDto.getTxnId());
 
         logger.info("OTP verification successful for existing user. Mobile number: {}",
             maskMobileNumber(verifyOtpRequestDto.getMobileNumber()));
         guavaCacheService.remove(user.getMobileNumber());
       } else {
         verifyOtpResponseDto.setNew(true);
+        verifyOtpResponseDto.setTxnId(verifyOtpRequestDto.getTxnId());
         logger.info("OTP verification successful for new user. Mobile number: {}",
             maskMobileNumber(verifyOtpRequestDto.getMobileNumber()));
       }
@@ -213,6 +215,7 @@ public class AuthServiceImpl implements AuthService {
       verifyOtpResponseDto.setNew(false);
       verifyOtpResponseDto.setToken(generateJwtToken(makeJwtPayLoadDto(dbUsers)));
       verifyOtpResponseDto.setUser(dbUsers);
+      verifyOtpResponseDto.setTxnId(userProfileRequestDto.getTxnId());
 
       guavaCacheService.remove(dbUsers.getMobileNumber());
       logger.info("Cleared OTP cache for mobile number: {}", maskMobileNumber(dbUsers.getMobileNumber()));

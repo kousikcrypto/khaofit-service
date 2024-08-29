@@ -96,7 +96,6 @@ public class JwtAuthUtils {
           .signWith(encodedSecret)
           .compact();
 
-      logger.info("Generating auth Token = {}", authToken);
       return authToken;
     } catch (Exception ex) {
       logger.error("Getting error at generating token = {}", ex.getMessage());

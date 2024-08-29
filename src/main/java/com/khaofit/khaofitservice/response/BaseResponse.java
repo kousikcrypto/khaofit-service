@@ -62,6 +62,24 @@ public class BaseResponse {
     return ResponseEntity.status(status).body(response);
   }
 
+
+  /**
+   * Error Response with Throwable and status and message .
+   *
+   * @param status {@link HttpStatus}
+   * @param data   {@link Object}
+   * @return @{@link ResponseEntity}
+   */
+  public ResponseEntity<?> errorResponse(HttpStatus status, String message, Object data) {
+    ResponseDto response = new ResponseDto();
+    response.setResponse(false);
+    response.setMessage(message);
+    response.setStatus(status);
+    response.setData(data);
+    response.setTimestamp(LocalDateTime.now());
+    return ResponseEntity.status(status).body(response);
+  }
+
   /**
    * Error Response with status and messages.
    *

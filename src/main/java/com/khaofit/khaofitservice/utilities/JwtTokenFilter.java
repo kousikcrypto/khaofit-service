@@ -3,6 +3,7 @@ package com.khaofit.khaofitservice.utilities;
 import com.khaofit.khaofitservice.dto.jwt.JwtPayloadDto;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -34,7 +35,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
       HttpServletRequest request,
       HttpServletResponse response,
       FilterChain chain
-  ) throws IOException {
+  ) throws IOException, ServletException {
     try {
       // Get authorization header and validate
       final String header = request.getHeader(HttpHeaders.AUTHORIZATION);
@@ -50,9 +51,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
           return;
         }
       } catch (Exception ex) {
-        response.setStatus(
-            HttpServletResponse.SC_UNAUTHORIZED
-        );
+        chain.doFilter(request, response);
+        return;
       }
       JwtPayloadDto jwtPayloadDto = jwtAuthUtils.decodeToken(token);
       request.setAttribute("payload", jwtPayloadDto);
@@ -67,8 +67,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
       chain.doFilter(request, response);
     } catch (ExpiredJwtException eje) {
       response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+      chain.doFilter(request, response);
     } catch (Exception ex) {
       response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      chain.doFilter(request, response);
     }
   }
 

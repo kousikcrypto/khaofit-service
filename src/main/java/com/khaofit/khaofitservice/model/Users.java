@@ -3,6 +3,7 @@ package com.khaofit.khaofitservice.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.khaofit.khaofitservice.enums.UserGender;
 import com.khaofit.khaofitservice.enums.UserStatus;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,11 +11,14 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import ulid4j.Ulid;
@@ -76,6 +80,9 @@ public class Users {
 
   @Column(name = "updated_at")
   private Date updatedAt;
+
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<BmiDetails> bmiDetails = new ArrayList<>();
 
   @PrePersist
   private void beforeInsert() {
