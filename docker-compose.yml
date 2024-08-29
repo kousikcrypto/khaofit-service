@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  khaofitservice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: khaofitservice
+    ports:
+      - "9090:9090"
+    environment:
+      - JAVA_OPTS=-Xmx512m
+    volumes:
+      - ./logs:/home/khaofit/logs
+    networks:
+      - khaofit_network
+    restart: unless-stopped
+
+networks:
+  khaofit_network:
+    driver: bridge
