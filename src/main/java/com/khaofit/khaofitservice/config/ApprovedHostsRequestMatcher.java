@@ -15,7 +15,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 @Slf4j
 public class ApprovedHostsRequestMatcher implements RequestMatcher {
   private final Pattern allowedHostPattern = Pattern.compile(
-      "^(localhost:9090|khaofir-service\\.onrender\\.com)$",
+      "^(localhost:9090|khaofit-service\\.onrender\\.com)$",
       Pattern.CASE_INSENSITIVE
   );
 
