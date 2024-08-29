@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y netcat
 RUN mkdir /app
 RUN mkdir /app/logs
 
-# Add user with a specific UID between 10000 and 20000
-RUN useradd -u 10001 -d /home/khaofit -m -s /bin/bash khaofit
+# Create a user with a specific UID between 10000 and 20000
+RUN useradd -r -u 10001 -m -d /home/khaofit -s /bin/bash khaofit
 
 # Set ownership of the home directory
 RUN chown -R 10001:10001 /home/khaofit /app /app/logs
