@@ -10,7 +10,8 @@ RUN mkdir /app
 RUN mkdir /app/logs
 #add user and usergroup
 #RUN addgroup -g 1001 -S ambula
-RUN useradd -ms /bin/bash khaofit
+#RUN useradd -ms /bin/bash khaofit
+RUN useradd -u 10001 -ms /bin/bash khaofit
 #Copy jar
 COPY --from=build /home/gradle/src/build/libs/khaofitservice-0.0.1-SNAPSHOT.jar /home/khaofit/khaofitservice-0.0.1-SNAPSHOT.jar
 USER khaofit
