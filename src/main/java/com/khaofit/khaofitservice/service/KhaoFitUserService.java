@@ -11,4 +11,6 @@ public interface KhaoFitUserService {
 
   public ResponseEntity<?> getUserDetails(String ulid);
 
+  public ResponseEntity<?> editUserDetails(String ulid);
+
 }

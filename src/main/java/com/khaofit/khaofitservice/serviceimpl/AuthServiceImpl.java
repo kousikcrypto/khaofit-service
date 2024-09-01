@@ -9,14 +9,19 @@ import com.khaofit.khaofitservice.dto.request.UserProfileRequestDto;
 import com.khaofit.khaofitservice.dto.request.VerifyOtpRequestDto;
 import com.khaofit.khaofitservice.dto.response.SendOtpDtoResponseDto;
 import com.khaofit.khaofitservice.dto.response.VerifyOtpResponseDto;
+import com.khaofit.khaofitservice.model.ReferralDetails;
 import com.khaofit.khaofitservice.model.Users;
+import com.khaofit.khaofitservice.repository.ReferralDetailsRepository;
 import com.khaofit.khaofitservice.repository.UserRepository;
 import com.khaofit.khaofitservice.response.BaseResponse;
 import com.khaofit.khaofitservice.service.AuthService;
 import com.khaofit.khaofitservice.utilities.JwtAuthUtils;
+import com.khaofit.khaofitservice.utilities.StringUtils;
 import jakarta.transaction.Transactional;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +41,9 @@ public class AuthServiceImpl implements AuthService {
 
   @Autowired
   private UserRepository userRepo;
+
+  @Autowired
+  private ReferralDetailsRepository referralDetailsRepository;
 
   @Autowired
   private ObjectMapper objectMapper;
@@ -189,36 +197,33 @@ public class AuthServiceImpl implements AuthService {
   @Transactional
   public ResponseEntity<?> saveKhaoFitUserProfile(UserProfileRequestDto userProfileRequestDto) {
     try {
-      logger.info("Starting to save user profile for mobile number: {}",
-          maskMobileNumber(userProfileRequestDto.getMobileNumber()));
+      String maskedMobileNumber = maskMobileNumber(userProfileRequestDto.getMobileNumber());
+      logger.info("Starting to save user profile for mobile number: {}", maskedMobileNumber);
 
-      String txnId = (String) guavaCacheService.get(userProfileRequestDto.getMobileNumber());
-      if (txnId == null || !txnId.equals(userProfileRequestDto.getTxnId())) {
-        logger.warn("Invalid transaction ID for mobile number In Save Profile: {}",
-            maskMobileNumber(userProfileRequestDto.getMobileNumber()));
+      if (!isValidTransactionId(userProfileRequestDto)) {
+        logger.warn("Invalid transaction ID for mobile number save profile : {}", maskedMobileNumber);
         return baseResponse.errorResponse(HttpStatus.BAD_REQUEST, "Invalid Transaction ID.");
       }
 
-      Optional<Users> optionalUsers = userRepo.findByMobileNumber(userProfileRequestDto.getMobileNumber());
-
-      if (optionalUsers.isPresent()) {
-        return baseResponse.errorResponse(HttpStatus.BAD_REQUEST, "User Is Already Exist !");
+      if (!isReferredCodeValid(userProfileRequestDto.getReferredCode())) {
+        logger.info("Entered Referral Code is Invalid: {}", userProfileRequestDto.getReferredCode().trim());
+        return baseResponse.errorResponse(HttpStatus.BAD_REQUEST, "Entered ReferralCode Is Invalid");
       }
 
-      Users users = objectMapper.convertValue(userProfileRequestDto, Users.class);
-      Users dbUsers = userRepo.saveAndFlush(users);
+      if (userRepo.existsByMobileNumber(userProfileRequestDto.getMobileNumber())) {
+        return baseResponse.errorResponse(HttpStatus.BAD_REQUEST, "User already exists!");
+      }
 
-      logger.info("User profile saved successfully. Mobile number: {}, User ID: {}",
-          maskMobileNumber(dbUsers.getMobileNumber()), dbUsers.getId());
+      Users newUser = createUserFromRequest(userProfileRequestDto);
+      userRepo.saveAndFlush(newUser);
 
-      VerifyOtpResponseDto verifyOtpResponseDto = new VerifyOtpResponseDto();
-      verifyOtpResponseDto.setNew(false);
-      verifyOtpResponseDto.setToken(generateJwtToken(makeJwtPayLoadDto(dbUsers)));
-      verifyOtpResponseDto.setUser(dbUsers);
-      verifyOtpResponseDto.setTxnId(userProfileRequestDto.getTxnId());
+      ReferralDetails referralDetails = getReferralDetails(userProfileRequestDto, newUser);
+      referralDetailsRepository.saveAndFlush(referralDetails);
 
-      guavaCacheService.remove(dbUsers.getMobileNumber());
-      logger.info("Cleared OTP cache for mobile number: {}", maskMobileNumber(dbUsers.getMobileNumber()));
+      VerifyOtpResponseDto verifyOtpResponseDto = buildOtpResponse(userProfileRequestDto, newUser);
+
+      guavaCacheService.remove(newUser.getMobileNumber());
+      logger.info("Cleared OTP cache for mobile number: {}", maskedMobileNumber);
 
       return baseResponse.successResponse(verifyOtpResponseDto);
 
@@ -228,6 +233,97 @@ public class AuthServiceImpl implements AuthService {
       return baseResponse.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
           "An error occurred while saving the user profile. Please try again.");
     }
+  }
+
+  /**
+   * this is a method for check transactionId valid or not .
+   *
+   * @param userProfileRequestDto @{@link UserProfileRequestDto}
+   * @return @{@link Boolean}
+   */
+  private boolean isValidTransactionId(UserProfileRequestDto userProfileRequestDto) {
+    String txnId = (String) guavaCacheService.get(userProfileRequestDto.getMobileNumber());
+    return txnId != null && txnId.equals(userProfileRequestDto.getTxnId());
+  }
+
+  /**
+   * this is a method for check referral code is valid or not .
+   *
+   * @param referredCode @{@link String}
+   * @return @{@link Boolean}
+   */
+  private boolean isReferredCodeValid(String referredCode) {
+    if (StringUtils.isNotNullAndNotEmpty(referredCode.trim())) {
+      return userRepo.findByReferralCode(referredCode.trim()).isPresent();
+    }
+    return true;
+  }
+
+  /**
+   * this is method for create user class from request dto .
+   *
+   * @param userProfileRequestDto @{@link UserProfileRequestDto}
+   * @return @{@link Users}
+   */
+  private Users createUserFromRequest(UserProfileRequestDto userProfileRequestDto) {
+    Users users = objectMapper.convertValue(userProfileRequestDto, Users.class);
+    users.setReferralCode(generateRandomAlphaNumeric(6));
+    return users;
+  }
+
+  /**
+   * this is a referralDetails method .
+   *
+   * @param userProfileRequestDto   @{@link UserProfileRequestDto}
+   * @param dbUsers @{@link Users}
+   * @return @{@link ReferralDetails}
+   */
+  private static @NotNull ReferralDetails getReferralDetails(UserProfileRequestDto userProfileRequestDto, Users dbUsers) {
+    ReferralDetails referralDetails = new ReferralDetails();
+    if (StringUtils.isNotNullAndNotEmpty(userProfileRequestDto.getReferredCode().trim())) {
+      referralDetails.setReferralCode(userProfileRequestDto.getReferredCode().trim());
+      referralDetails.setReferral(true);
+    } else {
+      referralDetails.setReferralCode(dbUsers.getReferralCode());
+      referralDetails.setReferral(false);
+    }
+    referralDetails.setUser(dbUsers);
+    referralDetails.setCoinsAwarded(0);
+    return referralDetails;
+  }
+
+  /**
+   * this is a build otp response method .
+   *
+   * @param userProfileRequestDto @{@link UserProfileRequestDto}
+   * @param dbUsers @{@link Users}
+   * @return @{@link VerifyOtpResponseDto}
+   * @throws JsonProcessingException @{@link JsonProcessingException}
+   */
+  private VerifyOtpResponseDto buildOtpResponse(UserProfileRequestDto userProfileRequestDto, Users dbUsers)
+      throws JsonProcessingException {
+    VerifyOtpResponseDto verifyOtpResponseDto = new VerifyOtpResponseDto();
+    verifyOtpResponseDto.setNew(false);
+    verifyOtpResponseDto.setToken(generateJwtToken(makeJwtPayLoadDto(dbUsers)));
+    verifyOtpResponseDto.setUser(dbUsers);
+    verifyOtpResponseDto.setTxnId(userProfileRequestDto.getTxnId());
+    return verifyOtpResponseDto;
+  }
+
+  /**
+   * generate Random AlphaNumeric Number .
+   *
+   * @param length @{@link Integer}
+   * @return @{@link String}
+   */
+  private String generateRandomAlphaNumeric(int length) {
+    String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    Random random = new Random();
+    StringBuilder result = new StringBuilder(length);
+    for (int i = 0; i < length; i++) {
+      result.append(characters.charAt(random.nextInt(characters.length())));
+    }
+    return result.toString();
   }
 
 }

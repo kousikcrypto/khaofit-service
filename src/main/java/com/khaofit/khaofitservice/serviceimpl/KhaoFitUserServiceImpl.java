@@ -55,4 +55,15 @@ public class KhaoFitUserServiceImpl implements KhaoFitUserService {
     }
   }
 
+  /**
+   * this is a edit user details method .
+   *
+   * @param ulid @{@link String}
+   * @return @{@link ResponseEntity}
+   */
+  @Override
+  public ResponseEntity<?> editUserDetails(String ulid) {
+    return null;
+  }
+
 }

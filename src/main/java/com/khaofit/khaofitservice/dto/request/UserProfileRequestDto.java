@@ -44,6 +44,8 @@ public class UserProfileRequestDto {
   @NotNull(message = "Gender is mandatory")
   private UserGender gender;
 
+  private String referredCode;
+
   @NotBlank(message = "txnId cannot be blank")
   @NotEmpty(message = "txnId cannot be empty")
   @NotNull(message = "txnId cannot be null")

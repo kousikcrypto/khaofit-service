@@ -15,7 +15,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import java.util.Date;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -61,10 +62,10 @@ public class BmiDetails {
   private boolean active;
 
   @Column(name = "created_at")
-  private Date createdAt;
+  private OffsetDateTime createdAt;
 
   @Column(name = "updated_at")
-  private Date updatedAt;
+  private OffsetDateTime updatedAt;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id")
@@ -74,13 +75,37 @@ public class BmiDetails {
 
   @PrePersist
   private void beforeInsert() {
-    this.setCreatedAt(new Date());
-    this.setUpdatedAt(new Date());
+    this.setCreatedAt(OffsetDateTime.now(ZoneOffset.of("+05:30")));
+    this.setUpdatedAt(OffsetDateTime.now(ZoneOffset.of("+05:30")));
     this.setActive(true);
   }
 
   @PreUpdate
   private void beforeUpdate() {
-    this.setUpdatedAt(new Date());
+    this.setUpdatedAt(OffsetDateTime.now(ZoneOffset.of("+05:30")));
+  }
+
+  /**
+   * Custom getter for createdAt to always return in IST .
+   *
+   * @return @ {@link OffsetDateTime}
+   */
+  public OffsetDateTime getCreatedAt() {
+    if (createdAt != null) {
+      return createdAt.withOffsetSameInstant(ZoneOffset.of("+05:30"));
+    }
+    return null;
+  }
+
+  /**
+   * Custom getter for updatedAt to always return in IST .
+   *
+   * @return @ {@link OffsetDateTime}
+   */
+  public OffsetDateTime getUpdatedAt() {
+    if (updatedAt != null) {
+      return updatedAt.withOffsetSameInstant(ZoneOffset.of("+05:30"));
+    }
+    return null;
   }
 }
