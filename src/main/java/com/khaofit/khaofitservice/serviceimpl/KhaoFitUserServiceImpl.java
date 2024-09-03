@@ -1,9 +1,12 @@
 package com.khaofit.khaofitservice.serviceimpl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.khaofit.khaofitservice.dto.request.EditUserProfileRequestDto;
 import com.khaofit.khaofitservice.model.Users;
 import com.khaofit.khaofitservice.repository.UserRepository;
 import com.khaofit.khaofitservice.response.BaseResponse;
 import com.khaofit.khaofitservice.service.KhaoFitUserService;
+import jakarta.transaction.Transactional;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +28,9 @@ public class KhaoFitUserServiceImpl implements KhaoFitUserService {
 
   @Autowired
   private BaseResponse baseResponse;
+
+  @Autowired
+  private ObjectMapper objectMapper;
 
   private static final Logger logger = LoggerFactory.getLogger(KhaoFitUserServiceImpl.class);
 
@@ -62,8 +68,35 @@ public class KhaoFitUserServiceImpl implements KhaoFitUserService {
    * @return @{@link ResponseEntity}
    */
   @Override
-  public ResponseEntity<?> editUserDetails(String ulid) {
-    return null;
+  @Transactional
+  public ResponseEntity<?> editUserDetails(String ulid, EditUserProfileRequestDto dto) {
+    logger.info("Attempting to update user details for ulid: {}", ulid);
+
+    try {
+      Optional<Users> optionalUsers = userRepository.findByUlId(ulid);
+      if (optionalUsers.isEmpty()) {
+        logger.warn("User not found with ulid: {}", ulid);
+        return baseResponse.errorResponse(HttpStatus.BAD_REQUEST, "User not found with the provided ID.");
+      }
+
+      Users users = optionalUsers.get();
+      users.setFirstName(dto.getFirstName());
+      users.setMiddleName(dto.getMiddleName());
+      users.setLastName(dto.getLastName());
+      users.setDateOfBirth(dto.getDateOfBirth());
+      users.setEmailId(dto.getEmailId());
+      users.setGender(dto.getGender());
+
+      Users updatedUser = userRepository.saveAndFlush(users);
+      logger.info("User details updated successfully for ulid: {}", ulid);
+
+      return baseResponse.successResponse("User details updated successfully.", updatedUser);
+    } catch (Exception e) {
+      logger.error("Error occurred while updating user details for ulid: {}. Error: {}", ulid, e.getMessage());
+      return baseResponse.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+          "An unexpected error occurred. Please try again later.");
+    }
   }
+
 
 }

@@ -1,46 +1,42 @@
 package com.khaofit.khaofitservice.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.khaofit.khaofitservice.enums.UserGender;
-import com.khaofit.khaofitservice.enums.UserStatus;
-import com.khaofit.khaofitservice.enums.UserType;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import ulid4j.Ulid;
 
 /**
- * Users model class.
+ * this is table class for user subscription details .
  *
- * @author kousik
+ * @author kousik manik
  */
 @Entity
 @Getter
 @Setter
 @Table(
-    name = "users",
+    name = "user_subscription_details",
     schema = "khaofit",
     uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"mobile_number", "ulid", "referralCode"})
+        @UniqueConstraint(columnNames = {"ulid"})
     }
 )
-public class Users {
+public class UserSubscriptionDetails {
 
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
@@ -51,38 +47,20 @@ public class Users {
   @Column(name = "ulid", nullable = false)
   private String ulId;
 
-  @Column(name = "first_name")
-  private String firstName;
+  @Column(name = "active", nullable = false)
+  private boolean active;
 
-  @Column(name = "middle_name")
-  private String middleName;
+  @Column(name = "subscription_end_time", nullable = false)
+  private LocalDate subscriptionEndTime;
 
-  @Column(name = "last_name")
-  private String lastName;
+  @OneToOne
+  @JoinColumn(name = "subscription_plan_id", referencedColumnName = "id")
+  private SubscriptionPlans subscriptionPlans;
 
-  @Column(name = "date_of_birth")
-  private String dateOfBirth;
-
-  @Column(name = "mobile_number")
-  private String mobileNumber;
-
-  @Column(name = "email_id")
-  private String emailId;
-
-  @Column(name = "gender")
-  @Enumerated(EnumType.STRING)
-  private UserGender gender;
-
-  @Column(name = "status")
-  @Enumerated(EnumType.STRING)
-  private UserStatus status;
-
-  @Column(name = "user_type", nullable = false)
-  @Enumerated(EnumType.STRING)
-  private UserType userType;
-
-  @Column(name = "referral_code", nullable = false)
-  private String referralCode;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id")
+  @JsonIgnore
+  private Users user;
 
   @Column(name = "created_at")
   private OffsetDateTime createdAt;
@@ -90,25 +68,13 @@ public class Users {
   @Column(name = "updated_at")
   private OffsetDateTime updatedAt;
 
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-  @JsonIgnore
-  private List<BmiDetails> bmiDetails = new ArrayList<>();
-
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-  @JsonIgnore
-  private List<ReferralDetails> referralDetails = new ArrayList<>();
-
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-  @JsonIgnore
-  private List<UserSubscriptionDetails> userSubscriptionDetails = new ArrayList<>();
 
   @PrePersist
   private void beforeInsert() {
     this.setUlId(new Ulid().next());
     this.setCreatedAt(OffsetDateTime.now(ZoneOffset.of("+05:30")));
     this.setUpdatedAt(OffsetDateTime.now(ZoneOffset.of("+05:30")));
-    this.setStatus(UserStatus.ACTIVE);
-    this.setUserType(UserType.USER);
+    this.setActive(true);
   }
 
   @PreUpdate
@@ -139,5 +105,7 @@ public class Users {
     }
     return null;
   }
-}
 
+
+
+}

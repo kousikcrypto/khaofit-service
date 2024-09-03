@@ -59,6 +59,7 @@ public class SecurityConfig {
                 .requestMatchers("/health-check/**").permitAll()
                 .requestMatchers("/bmi/**").fullyAuthenticated()
                 .requestMatchers("/user/**").fullyAuthenticated()
+                .requestMatchers("/subscription/**").fullyAuthenticated()
                 .anyRequest().permitAll());
   }
 
