@@ -1,6 +1,7 @@
 package com.khaofit.khaofitservice.controller;
 
 import com.khaofit.khaofitservice.dto.request.CreateSubscriptionPlansRequestDto;
+import com.khaofit.khaofitservice.dto.request.UserSubscriptionRequestDto;
 import com.khaofit.khaofitservice.service.SubscriptionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -39,6 +40,17 @@ public class SubscriptionController {
   public ResponseEntity<?> getSubscriptionPlanByUlid(@Valid @RequestParam(name = "ulid")
                                                      @NotBlank(message = "ulid is required") String ulid) {
     return subscriptionService.getSubscriptionPlanByUlid(ulid);
+  }
+
+  @PostMapping("/user/add")
+  public ResponseEntity<?> addSubscriptionForUser(@Valid @RequestBody UserSubscriptionRequestDto dto) {
+    return subscriptionService.addSubscriptionForUser(dto);
+  }
+
+  @GetMapping("/user/details")
+  public ResponseEntity<?> getUserSubscriptionDetails(@Valid @RequestParam(name = "ulid")
+                                                      @NotBlank(message = "ulid is required") String ulid) {
+    return subscriptionService.getUserSubscriptionDetails(ulid);
   }
 
 }

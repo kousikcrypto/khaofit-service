@@ -3,6 +3,7 @@ package com.khaofit.khaofitservice.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.khaofit.khaofitservice.enums.UserGender;
 import com.khaofit.khaofitservice.enums.UserStatus;
+import com.khaofit.khaofitservice.enums.UserType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -76,6 +77,10 @@ public class Users {
   @Enumerated(EnumType.STRING)
   private UserStatus status;
 
+  @Column(name = "user_type", nullable = false)
+  @Enumerated(EnumType.STRING)
+  private UserType userType;
+
   @Column(name = "referral_code", nullable = false)
   private String referralCode;
 
@@ -86,10 +91,16 @@ public class Users {
   private OffsetDateTime updatedAt;
 
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @JsonIgnore
   private List<BmiDetails> bmiDetails = new ArrayList<>();
 
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @JsonIgnore
   private List<ReferralDetails> referralDetails = new ArrayList<>();
+
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @JsonIgnore
+  private List<UserSubscriptionDetails> userSubscriptionDetails = new ArrayList<>();
 
   @PrePersist
   private void beforeInsert() {
@@ -97,6 +108,7 @@ public class Users {
     this.setCreatedAt(OffsetDateTime.now(ZoneOffset.of("+05:30")));
     this.setUpdatedAt(OffsetDateTime.now(ZoneOffset.of("+05:30")));
     this.setStatus(UserStatus.ACTIVE);
+    this.setUserType(UserType.USER);
   }
 
   @PreUpdate
